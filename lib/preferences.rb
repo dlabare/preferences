@@ -485,6 +485,29 @@ module Preferences
       end
     end
     
+    # Reverts the preferences for this record to the defaults specified in the 
+    # definition.
+    #
+    # == Examples
+    #
+    #   class User < ActiveRecord::Base
+    #     preference :color, :string, :default => 'red'
+    #   end
+    #   
+    #   user = User.create
+    #   user.preferred(:color)            # => "red"
+    #   user.preferred_color = 'blue'     # => "blue"
+    #   user.revert_preferences_to_default!
+    #   user.preferred_color              # => "red"
+    #   user.save! (still need to save to store)
+    #
+    def revert_preferences_to_default!
+      preference_definitions.each do |name, definition|
+        write_preference(name, definition.default_value)
+      end
+      preferences
+    end
+    
     # Reloads the pereferences of this object as well as its attributes
     def reload(*args) #:nodoc:
       result = super
