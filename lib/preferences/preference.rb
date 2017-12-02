@@ -51,12 +51,6 @@ class Preference < ActiveRecord::Base
     value
   end
   
-  # Only searches for the group record if the group id is specified
-  def group_with_optional_lookup
-    group_id ? group_without_optional_lookup : group_type
-  end
-  alias_method_chain :group, :optional_lookup
-  
   private
     # Finds the definition for this preference in the given owner class.
     def find_definition(owner_class)
