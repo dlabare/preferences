@@ -11,7 +11,11 @@ module Preferences
       @type = args.first ? args.first.to_sym : :boolean
       
       # Create a column that will be responsible for typecasting
-      @column = ActiveRecord::ConnectionAdapters::Column.new(name.to_s, options[:default], @type == :any ? nil : @type.to_s)
+      @column = ActiveRecord::ConnectionAdapters::Column.new(
+        name.to_s, 
+        options[:default], 
+        ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: (@type == :any ? nil : @type.to_s))
+      )
       
       @group_defaults = (options[:group_defaults] || {}).inject({}) do |defaults, (group, default)|
         defaults[group.is_a?(Symbol) ? group.to_s : group] = type_cast(default)
@@ -32,14 +36,21 @@ module Preferences
     
     # Determines whether column backing this preference stores numberic values
     def number?
-      @column.number?
+      [
+        ActiveModel::Type::BigInteger,
+        ActiveModel::Type::Decimal,
+        ActiveModel::Type::Float,
+        ActiveModel::Type::Integer
+      ].include?(
+        ActiveRecord::Base.connection.lookup_cast_type_from_column(@column).class
+      )
     end
     
     # Typecasts the value based on the type of preference that was defined.
     # This uses ActiveRecord's typecast functionality so the same rules for
     # typecasting a model's columns apply here.
     def type_cast(value)
-      @type == :any ? value : @column.type_cast(value)
+      @type == :any ? value : ActiveRecord::Base.connection.type_cast_from_column(@column, value)
     end
     
     # Typecasts the value to true/false depending on the type of preference
